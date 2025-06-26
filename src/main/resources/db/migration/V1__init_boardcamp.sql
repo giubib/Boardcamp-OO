@@ -12,7 +12,7 @@ CREATE TABLE customers (
     id     BIGSERIAL PRIMARY KEY,
     name   VARCHAR(100) NOT NULL,
     phone  VARCHAR(11)  NOT NULL CHECK (phone ~ '^[0-9]{10,11}$'),
-    cpf    CHAR(11)     NOT NULL UNIQUE CHECK (cpf   ~ '^[0-9]{11}$')
+    cpf    VARCHAR(11)     NOT NULL UNIQUE CHECK (cpf   ~ '^[0-9]{11}$')
 );
 
 CREATE TABLE rentals (

@@ -1,6 +1,6 @@
-package com.boardcamp.dtos;
+package com.boardcamp.api.dtos;
 
-public record GameDTO(
+public record GameResponse(
         Long id,
         String name,
         String image,

@@ -1,4 +1,4 @@
-package com.boardcamp.models;
+package com.boardcamp.api.models;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,10 +6,15 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "rentals")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Rental {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
