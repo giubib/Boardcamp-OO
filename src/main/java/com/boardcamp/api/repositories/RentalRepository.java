@@ -8,8 +8,7 @@ import com.boardcamp.api.models.Rental;
 import java.util.List;
 
 public interface RentalRepository extends JpaRepository<Rental, Long> {
-
-    int countByGameIdAndReturnDateIsNull(Long gameId);
+    long countByGameIdAndReturnDateIsNull(Long gameId);
 
     @Query("""
             SELECT r FROM Rental r

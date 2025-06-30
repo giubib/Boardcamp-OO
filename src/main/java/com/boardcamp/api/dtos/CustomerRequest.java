@@ -1,9 +1,10 @@
 package com.boardcamp.api.dtos;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 public record CustomerRequest(
-                @NotBlank @Size(max = 100) String name,
-                @NotNull @Pattern(regexp = "^\\d{10,11}$") String phone,
-                @NotNull @Pattern(regexp = "^\\d{11}$") String cpf) {
+                @NotBlank String name,
+                @Pattern(regexp = "\\d{10,11}") String phone,
+                @Pattern(regexp = "\\d{11}") String cpf) {
 }

@@ -75,15 +75,15 @@ class RentalsServiceUnitTest {
                                         Rental r = inv.getArgument(0);
                                         return new RentalDTO(
                                                         r.getId(),
-                                                        r.getRentDate().toString(),
+                                                        r.getRentDate(), // LocalDate
                                                         r.getDaysRented(),
-                                                        r.getReturnDate() == null ? null
-                                                                        : r.getReturnDate().toString(),
+                                                        r.getReturnDate(),
                                                         r.getOriginalPrice(),
                                                         r.getDelayFee(),
                                                         mapper.toCustomerDTO(r.getCustomer()),
                                                         mapper.toGameDTO(r.getGame()));
                                 });
+
         }
 
         @Test
@@ -108,7 +108,7 @@ class RentalsServiceUnitTest {
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(gameRepository.findById(1L)).thenReturn(Optional.of(game));
                 when(rentalRepository.countByGameIdAndReturnDateIsNull(1L))
-                                .thenReturn(game.getStockTotal());
+                                .thenReturn((long) game.getStockTotal());
 
                 UnprocessableEntityException ex = assertThrows(
                                 UnprocessableEntityException.class,
@@ -124,8 +124,8 @@ class RentalsServiceUnitTest {
 
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(gameRepository.findById(1L)).thenReturn(Optional.of(game));
-                when(rentalRepository.countByGameIdAndReturnDateIsNull(1L)).thenReturn(0);
-
+                when(rentalRepository.countByGameIdAndReturnDateIsNull(1L))
+                                .thenReturn(0L);
                 Rental toSave = Rental.builder()
                                 .customer(customer)
                                 .game(game)

@@ -1,14 +1,18 @@
 package com.boardcamp.api.services;
 
-import com.boardcamp.api.dtos.*;
-import com.boardcamp.api.exceptions.*;
-import com.boardcamp.api.mappers.BoardcampMapper;
-import com.boardcamp.api.models.*;
-import com.boardcamp.api.repositories.*;
-
+import com.boardcamp.api.dtos.RentalDTO;
+import com.boardcamp.api.dtos.RentalRequest;
+import com.boardcamp.api.exceptions.NotFoundException;
+import com.boardcamp.api.exceptions.UnprocessableEntityException;
+import com.boardcamp.api.models.Customer;
+import com.boardcamp.api.models.Game;
+import com.boardcamp.api.models.Rental;
+import com.boardcamp.api.repositories.CustomerRepository;
+import com.boardcamp.api.repositories.GameRepository;
+import com.boardcamp.api.repositories.RentalRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -18,72 +22,75 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RentalsService {
 
-    private final RentalRepository rentalRepo;
-    private final GameRepository gameRepo;
-    private final CustomerRepository customerRepo;
-    private final BoardcampMapper mapper;
+    private final RentalRepository rentals;
+    private final GameRepository games;
+    private final CustomerRepository customers;
 
     public List<RentalDTO> getAll() {
-        return mapper.toRentalDTOs(rentalRepo.findAllWithDetails());
+        return rentals.findAll()
+                .stream()
+                .map(r -> RentalDTO.from(r, r.getCustomer(), r.getGame()))
+                .toList();
     }
 
     @Transactional
     public RentalDTO create(RentalRequest dto) {
-        Customer customer = customerRepo.findById(dto.customerId())
+
+        Customer customer = customers.findById(dto.customerId())
                 .orElseThrow(() -> new NotFoundException("Customer not found"));
-        Game game = gameRepo.findById(dto.gameId())
+
+        long open = rentals.countByGameIdAndReturnDateIsNull(dto.gameId());
+
+        Game game = games.findById(dto.gameId())
                 .orElseThrow(() -> new NotFoundException("Game not found"));
 
-        int openRentals = rentalRepo.countByGameIdAndReturnDateIsNull(game.getId());
-        if (openRentals >= game.getStockTotal())
+        if (open >= game.getStockTotal())
             throw new UnprocessableEntityException("No stock available for this game");
 
-        LocalDate today = LocalDate.now();
-        int originalFee = game.getPricePerDay() * dto.daysRented();
+        int originalPrice = dto.daysRented() * game.getPricePerDay();
 
         Rental rental = Rental.builder()
                 .customer(customer)
                 .game(game)
-                .rentDate(today)
+                .rentDate(LocalDate.now())
                 .daysRented(dto.daysRented())
-                .originalPrice(originalFee)
+                .originalPrice(originalPrice)
                 .delayFee(0)
-                .returnDate(null)
                 .build();
 
-        return mapper.toRentalDTO(rentalRepo.save(rental));
+        rental = rentals.save(rental);
+        return RentalDTO.from(rental, customer, game);
     }
 
     @Transactional
     public RentalDTO returnRental(Long id) {
-        Rental rental = rentalRepo.findById(id)
+        Rental rental = rentals.findById(id)
                 .orElseThrow(() -> new NotFoundException("Rental not found"));
 
         if (rental.getReturnDate() != null)
-            throw new UnprocessableEntityException("Rental already finalized");
+            throw new UnprocessableEntityException("Rental already returned");
 
         LocalDate today = LocalDate.now();
         rental.setReturnDate(today);
 
-        LocalDate expectedReturn = rental.getRentDate().plusDays(rental.getDaysRented());
-        long daysLate = ChronoUnit.DAYS.between(expectedReturn, today);
-        if (daysLate < 0)
-            daysLate = 0;
+        Game game = rental.getGame();
 
-        int delayFee = (int) (daysLate * rental.getGame().getPricePerDay());
-        rental.setDelayFee(delayFee);
+        long diff = ChronoUnit.DAYS.between(
+                rental.getRentDate().plusDays(rental.getDaysRented()), today);
+        int fee = diff > 0 ? (int) diff * game.getPricePerDay() : 0;
 
-        return mapper.toRentalDTO(rentalRepo.save(rental));
+        rental.setDelayFee(fee);
+        rental = rentals.save(rental);
+
+        return RentalDTO.from(rental, rental.getCustomer(), game);
     }
 
     @Transactional
     public void delete(Long id) {
-        Rental rental = rentalRepo.findById(id)
+        Rental rental = rentals.findById(id)
                 .orElseThrow(() -> new NotFoundException("Rental not found"));
-
         if (rental.getReturnDate() == null)
-            throw new BadRequestException("Cannot delete rental still in progress");
-
-        rentalRepo.delete(rental);
+            throw new UnprocessableEntityException("Rental still open");
+        rentals.delete(rental);
     }
 }

@@ -5,7 +5,6 @@ import com.boardcamp.api.models.*;
 
 import org.springframework.stereotype.Component;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
@@ -79,16 +78,15 @@ public class BoardcampMapper {
                 : entities.stream().map(this::toCustomerDTO).toList();
     }
 
-    private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE;
-
     public RentalDTO toRentalDTO(Rental entity) {
         if (entity == null)
             return null;
+
         return new RentalDTO(
                 entity.getId(),
-                entity.getRentDate() != null ? entity.getRentDate().format(ISO) : null,
+                entity.getRentDate(),
                 entity.getDaysRented(),
-                entity.getReturnDate() != null ? entity.getReturnDate().format(ISO) : null,
+                entity.getReturnDate(),
                 entity.getOriginalPrice(),
                 entity.getDelayFee(),
                 toCustomerDTO(entity.getCustomer()),

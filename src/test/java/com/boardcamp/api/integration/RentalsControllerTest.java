@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @org.springframework.test.context.ActiveProfiles("test")
-class RentalsControllerIT {
+class RentalsControllerTest {
 
         @Autowired
         private TestRestTemplate rest;
